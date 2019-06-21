@@ -11,6 +11,7 @@ import android.view.ViewParent;
 import android.view.ScaleGestureDetector;
 import android.view.animation.Interpolator;
 
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.views.scroll.ScrollEventType;
 import com.facebook.react.views.scroll.ScrollEvent;
 import com.facebook.react.uimanager.PixelUtil;
@@ -19,6 +20,8 @@ import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.views.scroll.ReactScrollViewHelper;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.bridge.Arguments;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +66,16 @@ public class DirectedScrollView extends ReactViewGroup {
     reactContext = (ReactContext)this.getContext();
     touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
   }
+
+  /** way to get current value of scale */
+  public float getScaleFactor() {
+    return scaleFactor;
+  }
+
+  private void sendFloatScaleFactorOnZoom(ReactContext context, String eventName, WritableMap params) {
+    context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, params);
+  }
+  
 
   @Override
   protected void onAttachedToWindow() {
@@ -168,7 +181,12 @@ public class DirectedScrollView extends ReactViewGroup {
         }
 
         scaleFactor *= detector.getScaleFactor();
+
+        WritableMap factorMap = Arguments.createMap();
+        factorMap.putDouble("scaleFactor", scaleFactor);
+        sendFloatScaleFactorOnZoom(reactContext, "viewRescalled", factorMap);
         updateChildren();
+
         return true;
       }
 
